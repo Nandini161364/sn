@@ -19,3 +19,8 @@ class CommentPresenter:
         return {
             "error": "Invalid comment content",
         }
+
+    def invalid_parent_comment(self):
+        return {
+            "error": "Invalid parent comment",
+        }

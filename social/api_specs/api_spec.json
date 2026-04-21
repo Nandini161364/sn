@@ -1,0 +1,1191 @@
+{
+    "swagger": "2.0",
+    "host": "localhost:8000",
+    "basePath": "/social",
+    "info": {
+        "title": "Social API",
+        "version": "1.0.0",
+        "description": "Swagger specification for the social application endpoints."
+    },
+    "schemes": [
+        "http",
+        "https"
+    ],
+    "consumes": [
+        "application/json"
+    ],
+    "produces": [
+        "application/json"
+    ],
+    "tags": [
+        {
+            "name": "Posts"
+        },
+        {
+            "name": "Comments"
+        },
+        {
+            "name": "Reactions"
+        },
+        {
+            "name": "Groups"
+        }
+    ],
+    "securityDefinitions": {
+        "oauth": {
+            "type": "oauth2",
+            "flow": "password",
+            "tokenUrl": "http://auth.ibtspl.com/oauth2/",
+            "scopes": {
+                "read": "Read access",
+                "write": "Write access",
+                "update": "Update access",
+                "delete": "Delete access",
+                "superuser": "Superuser access"
+            }
+        }
+    },
+    "definitions": {
+        "UserSummary": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "profile_pic": {
+                    "type": "string"
+                }
+            }
+        },
+        "GroupSummary": {
+            "type": "object",
+            "properties": {
+                "group_id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "ReactionSummary": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                },
+                "type": {
+                    "type": "array",
+                    "items": {
+                        "type": "string",
+                        "enum": [
+                            "WOW",
+                            "LIT",
+                            "LOVE",
+                            "HAHA",
+                            "THUMBS-UP",
+                            "THUMBS-DOWN",
+                            "ANGRY",
+                            "SAD"
+                        ]
+                    }
+                }
+            }
+        },
+        "Reply": {
+            "type": "object",
+            "properties": {
+                "comment_id": {
+                    "type": "string"
+                },
+                "commenter": {
+                    "$ref": "#/definitions/UserSummary"
+                },
+                "commented_at": {
+                    "type": "string"
+                },
+                "comment_content": {
+                    "type": "string"
+                },
+                "reactions": {
+                    "$ref": "#/definitions/ReactionSummary"
+                }
+            }
+        },
+        "Comment": {
+            "type": "object",
+            "properties": {
+                "comment_id": {
+                    "type": "string"
+                },
+                "commenter": {
+                    "$ref": "#/definitions/UserSummary"
+                },
+                "commented_at": {
+                    "type": "string"
+                },
+                "comment_content": {
+                    "type": "string"
+                },
+                "reactions": {
+                    "$ref": "#/definitions/ReactionSummary"
+                },
+                "replies_count": {
+                    "type": "integer"
+                },
+                "replies": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Reply"
+                    }
+                }
+            }
+        },
+        "PostDetail": {
+            "type": "object",
+            "properties": {
+                "post_id": {
+                    "type": "string"
+                },
+                "group": {
+                    "$ref": "#/definitions/GroupSummary"
+                },
+                "posted_by": {
+                    "$ref": "#/definitions/UserSummary"
+                },
+                "posted_at": {
+                    "type": "string"
+                },
+                "post_content": {
+                    "type": "string"
+                },
+                "reactions": {
+                    "$ref": "#/definitions/ReactionSummary"
+                },
+                "comments": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/Comment"
+                    }
+                },
+                "comments_count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ReactionByUser": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "profile_pic": {
+                    "type": "string"
+                },
+                "reaction": {
+                    "type": "string",
+                    "enum": [
+                        "WOW",
+                        "LIT",
+                        "LOVE",
+                        "HAHA",
+                        "THUMBS-UP",
+                        "THUMBS-DOWN",
+                        "ANGRY",
+                        "SAD"
+                    ]
+                }
+            }
+        },
+        "MessageResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string"
+                }
+            }
+        },
+        "CreatePostRequest": {
+            "type": "object",
+            "properties": {
+                "content": {
+                    "type": "string"
+                },
+                "post_content": {
+                    "type": "string",
+                    "description": "Alternative field name also accepted by the view."
+                },
+                "user_id": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "integer"
+                }
+            },
+            "required": [
+                "user_id"
+            ]
+        },
+        "CreatePostResponse": {
+            "type": "object",
+            "properties": {
+                "post_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "CreateCommentRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "post_id": {
+                    "type": "string"
+                },
+                "content": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "user_id",
+                "post_id",
+                "content"
+            ]
+        },
+        "ReplyToCommentRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "comment_id": {
+                    "type": "string"
+                },
+                "reply_content": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "user_id",
+                "comment_id",
+                "reply_content"
+            ]
+        },
+        "CreateCommentResponse": {
+            "type": "object",
+            "properties": {
+                "comment_id": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "ReactToPostRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "post_id": {
+                    "type": "string"
+                },
+                "reaction_type": {
+                    "type": "string",
+                    "enum": [
+                        "WOW",
+                        "LIT",
+                        "LOVE",
+                        "HAHA",
+                        "THUMBS-UP",
+                        "THUMBS-DOWN",
+                        "ANGRY",
+                        "SAD"
+                    ]
+                }
+            },
+            "required": [
+                "user_id",
+                "post_id",
+                "reaction_type"
+            ]
+        },
+        "ReactToCommentRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "comment_id": {
+                    "type": "string"
+                },
+                "reaction_type": {
+                    "type": "string",
+                    "enum": [
+                        "WOW",
+                        "LIT",
+                        "LOVE",
+                        "HAHA",
+                        "THUMBS-UP",
+                        "THUMBS-DOWN",
+                        "ANGRY",
+                        "SAD"
+                    ]
+                }
+            },
+            "required": [
+                "user_id",
+                "comment_id",
+                "reaction_type"
+            ]
+        },
+        "DeletePostRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "user_id"
+            ]
+        },
+        "CreateGroupRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "member_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                }
+            },
+            "required": [
+                "user_id",
+                "name"
+            ]
+        },
+        "CreateGroupResponse": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "integer"
+                }
+            }
+        },
+        "AddMemberToGroupRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "integer"
+                },
+                "new_member_id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "user_id",
+                "group_id",
+                "new_member_id"
+            ]
+        },
+        "RemoveMemberFromGroupRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "integer"
+                },
+                "member_id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "user_id",
+                "group_id",
+                "member_id"
+            ]
+        },
+        "MakeMemberAdminRequest": {
+            "type": "object",
+            "properties": {
+                "user_id": {
+                    "type": "string"
+                },
+                "group_id": {
+                    "type": "integer"
+                },
+                "member_id": {
+                    "type": "string"
+                }
+            },
+            "required": [
+                "user_id",
+                "group_id",
+                "member_id"
+            ]
+        },
+        "ReactionCountResponse": {
+            "type": "object",
+            "properties": {
+                "count": {
+                    "type": "integer"
+                }
+            }
+        },
+        "ReactionMetricsResponse": {
+            "type": "object",
+            "additionalProperties": {
+                "type": "integer"
+            }
+        }
+    },
+    "paths": {
+        "/create-post/": {
+            "post": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Create a post",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreatePostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/CreatePostResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/create-comment/": {
+            "post": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Create a comment on a post",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateCommentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Comment creation response",
+                        "schema": {
+                            "$ref": "#/definitions/CreateCommentResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/reply-to-comment/": {
+            "post": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Reply to an existing comment",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ReplyToCommentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reply creation response",
+                        "schema": {
+                            "$ref": "#/definitions/CreateCommentResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/react-to-post/": {
+            "post": {
+                "tags": [
+                    "Reactions"
+                ],
+                "summary": "React to a post",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ReactToPostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reaction created, updated, or removed",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/react-to-comment/": {
+            "post": {
+                "tags": [
+                    "Reactions"
+                ],
+                "summary": "React to a comment",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/ReactToCommentRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reaction created, updated, or removed",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/get-total-reactions/": {
+            "get": {
+                "tags": [
+                    "Reactions"
+                ],
+                "summary": "Get total reaction count",
+                "responses": {
+                    "200": {
+                        "description": "Total number of reactions",
+                        "schema": {
+                            "$ref": "#/definitions/ReactionCountResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/get-reaction-metrics/{post_id}/": {
+            "get": {
+                "tags": [
+                    "Reactions"
+                ],
+                "summary": "Get reaction metrics for a post",
+                "description": "The current implementation reads `post_id` from the query string even though this route contains a path parameter.",
+                "parameters": [
+                    {
+                        "name": "post_id",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reaction counts grouped by reaction type",
+                        "schema": {
+                            "$ref": "#/definitions/ReactionMetricsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid post",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/get_reaction_metrics/": {
+            "get": {
+                "tags": [
+                    "Reactions"
+                ],
+                "summary": "Get reaction metrics using query params",
+                "parameters": [
+                    {
+                        "name": "post_id",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reaction counts grouped by reaction type",
+                        "schema": {
+                            "$ref": "#/definitions/ReactionMetricsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid post",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/delete/{post_id}/": {
+            "delete": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Delete a post",
+                "security": [
+                    {
+                        "oauth": [
+                            "superuser"
+                        ]
+                    }
+                ],
+                "parameters": [
+                    {
+                        "name": "post_id",
+                        "in": "path",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/DeletePostRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Delete response",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/get-posts-with-more-positive-reactions/": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get posts with more positive reactions than negative reactions",
+                "security": [
+                    {
+                        "oauth": [
+                            "superuser"
+                        ]
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of post ids",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized"
+                    }
+                }
+            }
+        },
+        "/get-posts-reacted-by-user/": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get posts reacted to by a user",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of post ids",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid user",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/get-reactions-to-post/": {
+            "get": {
+                "tags": [
+                    "Reactions"
+                ],
+                "summary": "Get all reactions to a post",
+                "parameters": [
+                    {
+                        "name": "post_id",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of reactions",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/ReactionByUser"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid post",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/get-post/": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get a single post with comments and replies",
+                "parameters": [
+                    {
+                        "name": "post_id",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Post details",
+                        "schema": {
+                            "$ref": "#/definitions/PostDetail"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid post",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/get-user-posts/": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get all posts created by a user",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of posts",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/PostDetail"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid user",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/get-replies-for-comment/": {
+            "get": {
+                "tags": [
+                    "Comments"
+                ],
+                "summary": "Get replies for a comment",
+                "parameters": [
+                    {
+                        "name": "comment_id",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of replies",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "comment_id": {
+                                        "type": "string"
+                                    },
+                                    "commenter": {
+                                        "$ref": "#/definitions/UserSummary"
+                                    },
+                                    "commented_at": {
+                                        "type": "string"
+                                    },
+                                    "comment_content": {
+                                        "type": "string"
+                                    }
+                                }
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid comment",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/create-group/": {
+            "post": {
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Create a group",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/CreateGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Group created successfully",
+                        "schema": {
+                            "$ref": "#/definitions/CreateGroupResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/add-member-to-group/": {
+            "post": {
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Add a member to a group",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/AddMemberToGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Add member response",
+                        "schema": {
+                            "type": "object",
+                            "properties": {
+                                "message": {
+                                    "type": "string"
+                                },
+                                "error": {
+                                    "type": "string"
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/remove-member-from-group/": {
+            "post": {
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Remove a member from a group",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/RemoveMemberFromGroupRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Member removed successfully",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/make-member-as-admin/": {
+            "post": {
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Promote a group member to admin",
+                "parameters": [
+                    {
+                        "in": "body",
+                        "name": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/MakeMemberAdminRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Member promoted successfully",
+                        "schema": {
+                            "$ref": "#/definitions/MessageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/get-group-feed/": {
+            "get": {
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Get paginated group feed",
+                "parameters": [
+                    {
+                        "name": "user_id",
+                        "in": "query",
+                        "required": true,
+                        "type": "string"
+                    },
+                    {
+                        "name": "group_id",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer"
+                    },
+                    {
+                        "name": "offset",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "default": 0
+                    },
+                    {
+                        "name": "limit",
+                        "in": "query",
+                        "required": false,
+                        "type": "integer",
+                        "default": 10
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of posts in the group feed",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/PostDetail"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Validation error",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/get-posts-with-more-comments-than-reactions/": {
+            "get": {
+                "tags": [
+                    "Posts"
+                ],
+                "summary": "Get posts with more comments than reactions",
+                "responses": {
+                    "200": {
+                        "description": "List of post ids",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/get-silent-group-members/": {
+            "get": {
+                "tags": [
+                    "Groups"
+                ],
+                "summary": "Get group members who have not created posts in the group",
+                "parameters": [
+                    {
+                        "name": "group_id",
+                        "in": "query",
+                        "required": true,
+                        "type": "integer"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of user ids",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid group",
+                        "schema": {
+                            "$ref": "#/definitions/ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
