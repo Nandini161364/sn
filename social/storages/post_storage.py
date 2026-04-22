@@ -4,7 +4,10 @@ from django.utils import timezone
 from social.constants import reaction_types, positive_reactions, negative_reactions
 from django.db.models import Count, Q, F
 
-class PostStorage:
+from social.interactors.storage_interfaces.storage_interface import StorageInterface
+
+#Return data format should be decided by presenter, so that presenter can decide what data to send in response
+class PostStorage(StorageInterface):
     def is_valid_post(self, post_id):
         return Post.objects.filter(post_id=post_id).exists()
 
@@ -82,77 +85,7 @@ class PostStorage:
 
         return list(post_ids)
 
-    def _get_reaction_summary(self, reactions_queryset):
-        reaction_types = list(
-            reactions_queryset.values_list("reaction", flat=True).distinct()
-        )
-        return {
-            "count": reactions_queryset.count(),
-            "type": reaction_types,
-        }
 
-    def _serialize_reply(self, reply):
-        return {
-            "comment_id": reply.commented_id,
-            "commenter": {
-                "user_id": reply.commented_by.user_id,
-                "name": reply.commented_by.name,
-                "profile_pic": reply.commented_by.profile_pic,
-            },
-            "commented_at": str(reply.commented_at),
-            "comment_content": reply.content,
-            "reactions": self._get_reaction_summary(reply.reactions.all()),
-        }
-
-    def _serialize_comment(self, comment):
-        replies = list(
-            Comment.objects.filter(parent_comment_id=comment.commented_id)
-            .select_related("commented_by")
-            .prefetch_related("reactions")
-            .order_by("commented_at", "commented_id")
-        )
-        return {
-            "comment_id": comment.commented_id,
-            "commenter": {
-                "user_id": comment.commented_by.user_id,
-                "name": comment.commented_by.name,
-                "profile_pic": comment.commented_by.profile_pic,
-            },
-            "commented_at": str(comment.commented_at),
-            "comment_content": comment.content,
-            "reactions": self._get_reaction_summary(comment.reactions.all()),
-            "replies_count": len(replies),
-            "replies": [self._serialize_reply(reply) for reply in replies],
-        }
-
-    def _serialize_post(self, post):
-        comments = list(
-            Comment.objects.filter(post_id=post.post_id, parent_comment__isnull=True)
-            .select_related("commented_by")
-            .prefetch_related("reactions")
-            .order_by("commented_at", "commented_id")
-        )
-        return {
-            "post_id": post.post_id,
-            "group": (
-                {
-                    "group_id": post.group.id,
-                    "name": post.group.name,
-                }
-                if post.group_id
-                else None
-            ),
-            "posted_by": {
-                "name": post.posted_by.name,
-                "user_id": post.posted_by.user_id,
-                "profile_pic": post.posted_by.profile_pic,
-            },
-            "posted_at": str(post.posted_at),
-            "post_content": post.content,
-            "reactions": self._get_reaction_summary(post.reactions.all()),
-            "comments": [self._serialize_comment(comment) for comment in comments],
-            "comments_count": Comment.objects.filter(post_id=post.post_id).count(),
-        }
 
     def get_posts_reacted_by_user(self, user_id):
         post_ids = (
@@ -163,46 +96,34 @@ class PostStorage:
         return list(post_ids)
 
     def get_reactions_to_post(self, post_id):
-        reactions = (
+        return (
             Reaction.objects.filter(post_id=post_id)
             .select_related("reacted_by")
             .order_by("reacted_at", "id")
         )
-        return [
-            {
-                "user_id": reaction.reacted_by.user_id,
-                "name": reaction.reacted_by.name,
-                "profile_pic": reaction.reacted_by.profile_pic,
-                "reaction": reaction.reaction,
-            }
-            for reaction in reactions
-        ]
 
     def get_post(self, post_id):
-        post = (
+        return (
             Post.objects.select_related("posted_by", "group")
-            .prefetch_related("reactions")
+            .prefetch_related("reactions", "comments")
             .get(post_id=post_id)
         )
-        return self._serialize_post(post)
 
     def get_user_posts(self, user_id):
-        posts = (
+        return (
             Post.objects.filter(posted_by_id=user_id)
             .select_related("posted_by", "group")
-            .prefetch_related("reactions")
+            .prefetch_related("reactions", "comments")
             .order_by("posted_at", "post_id")
         )
-        return [self._serialize_post(post) for post in posts]
 
     def get_group_feed(self, user_id, group_id, offset, limit):
-        posts = (
+        return (
             Post.objects.filter(group_id=group_id)
             .select_related("posted_by", "group")
-            .prefetch_related("reactions")
+            .prefetch_related("reactions", "comments")
             .order_by("-posted_at", "-post_id")[offset:offset + limit]
         )
-        return [self._serialize_post(post) for post in posts]
 
     def get_posts_with_more_comments_than_reactions(self):
         return list(

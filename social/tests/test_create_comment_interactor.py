@@ -13,14 +13,15 @@ from social.tests.factories import UserFactory, PostFactory
 
 
 @pytest.mark.django_db
-def test_create_comment_interactor():
+def test_create_comment():
     user = UserFactory()
     post = PostFactory(posted_by=user)
-    
-    dto = CreateCommentDTO(
+
+    comment_dto = CreateCommentDTO(
         user_id=user.user_id,
         post_id=post.post_id,
-        content="Hello world",
+        content="This is a comment.",
+        parent_comment_id=None
     )
 
     interactor = CreateCommentInteractor(
@@ -28,32 +29,35 @@ def test_create_comment_interactor():
         presenter=CommentPresenter(),
     )
 
-    response = interactor.create_comment(dto)
-
+    response = interactor.create_comment(comment_dto)
     with pytest.raises(InvalidUserException):
-        dto = CreateCommentDTO(
+        invalid_user_dto = CreateCommentDTO(
             user_id="invalid_user",
             post_id=post.post_id,
-            content="Hello world",
+            content="This is a comment.",
+            parent_comment_id=None
         )
-        interactor.create_comment(dto)
-
+        interactor.create_comment(invalid_user_dto)
     with pytest.raises(InvalidPostException):
-        dto = CreateCommentDTO(
+        invalid_post_dto = CreateCommentDTO(
             user_id=user.user_id,
             post_id="invalid_post",
-            content="Hello world",
+            content="This is a comment.",
+            parent_comment_id=None
         )
-        interactor.create_comment(dto)
-
+        interactor.create_comment(invalid_post_dto)
     with pytest.raises(InvalidCommentException):
-        dto = CreateCommentDTO(
+        invalid_comment_dto = CreateCommentDTO(
             user_id=user.user_id,
             post_id=post.post_id,
             content="",
+            parent_comment_id=None
         )
-        interactor.create_comment(dto)
-    
+        interactor.create_comment(invalid_comment_dto)
+
     assert response["message"] == "Comment created successfully"
     assert "comment_id" in response
-    assert Comment.objects.filter(commented_id=response["comment_id"], content="Hello world").exists()
+
+    comment_id = response["comment_id"]
+    comment = Comment.objects.get(commented_id=comment_id)
+    assert comment.content == "This is a comment."

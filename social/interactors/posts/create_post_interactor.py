@@ -29,3 +29,4 @@ class CreatePostInteractor:
         post_id = self.storage.create_post(post_dto)
 
         return self.presenter.success(post_id)
+    

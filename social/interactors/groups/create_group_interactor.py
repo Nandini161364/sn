@@ -1,8 +1,6 @@
 
 from social.exceptions import InvalidGroupNameException, InvalidUserException, InvalidMemberException
 
-
-
 class CreateGroupInteractor:
     def __init__(self, storage, presenter):
         self.storage = storage

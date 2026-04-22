@@ -74,21 +74,9 @@ class CommentStorage:
         reaction.save()
 
     def get_replies_for_comment(self, comment_id):
-        replies = (
+        return (
             Comment.objects.filter(parent_comment_id=comment_id)
             .select_related("commented_by")
+            .prefetch_related("reactions")
             .order_by("commented_at", "commented_id")
         )
-        return [
-            {
-                "comment_id": reply.commented_id,
-                "commenter": {
-                    "user_id": reply.commented_by.user_id,
-                    "name": reply.commented_by.name,
-                    "profile_pic": reply.commented_by.profile_pic,
-                },
-                "commented_at": str(reply.commented_at),
-                "comment_content": reply.content,
-            }
-            for reply in replies
-        ]

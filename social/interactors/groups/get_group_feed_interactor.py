@@ -8,8 +8,9 @@ from social.exceptions import (
 
 
 class GetGroupFeedInteractor:
-    def __init__(self, storage):
+    def __init__(self, storage, presenter):
         self.storage = storage
+        self.presenter = presenter
 
     def get_group_feed(self, group_feed_dto):
         if not self.storage.is_valid_user(group_feed_dto.user_id):
@@ -27,9 +28,10 @@ class GetGroupFeedInteractor:
         if group_feed_dto.limit <= 0:
             raise InvalidLimitSetValueException("Invalid limit")
 
-        return self.storage.get_group_feed(
+        posts = self.storage.get_group_feed(
             user_id=group_feed_dto.user_id,
             group_id=group_feed_dto.group_id,
             offset=group_feed_dto.offset,
             limit=group_feed_dto.limit,
         )
+        return self.presenter.serialize_posts(posts)

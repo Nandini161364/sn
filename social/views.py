@@ -3,6 +3,7 @@ from oauth2_provider.decorators import protected_resource
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+
 from social.presenters.group_presenter import GroupPresenter
 from social.storages.group_storage import GroupStorage
 
@@ -57,6 +58,8 @@ from .storages.post_storage import PostStorage
 from .storages.comment_storage import CommentStorage
 from .storages.reactions_storage import ReactionStorage
 
+
+
 from .exceptions import (
     InvalidGroupNameException, 
     InvalidMemberException, 
@@ -105,44 +108,59 @@ def create_post(request):
 
 
 @api_view(["POST"])
+@api_view(['POST'])
 def create_comment(request):
-    comment_dto = CreateCommentDTO(
-        user_id=request.data.get("user_id"),
-        post_id=request.data.get("post_id"),
-        content=request.data.get("content"),
-        parent_comment_id=None,
-    )
+    try:
+        comment_dto = CreateCommentDTO(
+            user_id=request.data.get("user_id"),
+            post_id=request.data.get("post_id"),
+            content=request.data.get("content"),
+            parent_comment_id=None,
+        )
 
-    interactor = CreateCommentInteractor(
-        storage=CommentStorage(),
-        presenter=CommentPresenter(),
-    )
-    response = interactor.create_comment(comment_dto)
-    return Response(response)
+        interactor = CreateCommentInteractor(
+            storage=CommentStorage(),
+            presenter=CommentPresenter(),
+        )
+        response = interactor.create_comment(comment_dto)
+        return Response(response)
+    except InvalidUserException:
+        return Response(CommentPresenter().invalid_user(), status=400)
+    except InvalidPostException:
+        return Response(CommentPresenter().invalid_post(), status=400)
+    except InvalidCommentException:
+        return Response(CommentPresenter().invalid_comment_content(), status=400)
 
 
 @api_view(["POST"])
 def reply_to_comment(request):
-    storage = CommentStorage()
-    parent_comment_id = request.data.get("comment_id")
-    post_id = storage.get_post_id_for_comment(parent_comment_id)
+    try:
+        storage = CommentStorage()
+        parent_comment_id = request.data.get("comment_id")
+        post_id = storage.get_post_id_for_comment(parent_comment_id)
 
-    if not post_id:
-        return Response(CommentPresenter().invalid_parent_comment())
+        if not post_id:
+            return Response(CommentPresenter().invalid_parent_comment())
 
-    reply_comment_dto = CreateCommentDTO(
-        user_id=request.data.get("user_id"),
-        post_id=post_id,
-        content=request.data.get("reply_content"),
-        parent_comment_id=parent_comment_id,
-    )
+        reply_comment_dto = CreateCommentDTO(
+            user_id=request.data.get("user_id"),
+            post_id=post_id,
+            content=request.data.get("reply_content"),
+            parent_comment_id=parent_comment_id,
+        )
 
-    interactor = CreateCommentInteractor(
-        storage=storage,
-        presenter=CommentPresenter(),
-    )
-    response = interactor.create_comment(reply_comment_dto)
-    return Response(response)
+        interactor = CreateCommentInteractor(
+            storage=storage,
+            presenter=CommentPresenter(),
+        )
+        response = interactor.create_comment(reply_comment_dto)
+        return Response(response)
+    except InvalidUserException:
+        return Response(CommentPresenter().invalid_user(), status=400)
+    except InvalidPostException:
+        return Response(CommentPresenter().invalid_post(), status=400)
+    except InvalidCommentException:
+        return Response(CommentPresenter().invalid_comment_content(), status=400)
 
 
 @api_view(["POST"])
@@ -272,7 +290,8 @@ def get_reactions_to_post(request):
     try:
         post_id = request.query_params.get("post_id")
         interactor = GetReactionsToPostInteractor(
-            storage=PostStorage()
+            storage=PostStorage(),
+            presenter=PostPresenter()
         )
         response = interactor.get_reactions_to_post(post_id)
         return Response(response)
@@ -285,7 +304,8 @@ def get_post(request):
     try:
         post_id = request.query_params.get("post_id")
         interactor = GetPostInteractor(
-            storage=PostStorage()
+            storage=PostStorage(),
+            presenter=PostPresenter()
         )
         response = interactor.get_post(post_id)
         return Response(response)
@@ -298,7 +318,8 @@ def get_user_posts(request):
     try:
         user_id = request.query_params.get("user_id")
         interactor = GetUserPostsInteractor(
-            storage=PostStorage()
+            storage=PostStorage(),
+            presenter=PostPresenter()
         )
         response = interactor.get_user_posts(user_id)
         return Response(response)
@@ -311,7 +332,8 @@ def get_replies_for_comment(request):
     try:
         comment_id = request.query_params.get("comment_id")
         interactor = GetRepliesForCommentInteractor(
-            storage=CommentStorage()
+            storage=CommentStorage(),
+            presenter=CommentPresenter()
         )
         response = interactor.get_replies_for_comment(comment_id)
         return Response(response)
@@ -441,7 +463,10 @@ def get_group_feed(request):
             limit=int(request.query_params.get("limit", 10)),
         )
 
-        interactor = GetGroupFeedInteractor(storage=PostStorage())
+        interactor = GetGroupFeedInteractor(
+            storage=PostStorage(),
+            presenter=PostPresenter()
+        )
         response = interactor.get_group_feed(group_feed_dto)
         return Response(response)
     except ValueError:
